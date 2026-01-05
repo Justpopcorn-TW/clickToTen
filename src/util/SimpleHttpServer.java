@@ -46,7 +46,7 @@ public class SimpleHttpServer {
                 return;
             }
             // Try to load from resources
-            String resourcePath = uri.startsWith("/") ? uri.substring(1) : uri;
+            String resourcePath = uri.startsWith("html") ? uri.substring(1) : uri;
             try (java.io.InputStream in = SimpleHttpServer.class.getClassLoader().getResourceAsStream(resourcePath)) {
                 if (in != null) {
                     byte[] bytes = in.readAllBytes();
