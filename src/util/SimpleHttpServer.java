@@ -34,21 +34,33 @@ public class SimpleHttpServer {
             String uri = t.getRequestURI().getPath();
             if (uri.equals("/")) uri = "/index.html";
             File file = new File(rootDir, uri);
-            if (!file.exists() || file.isDirectory()) {
-                String notFound = "404 Not Found";
-                t.sendResponseHeaders(404, notFound.length());
+            if (file.exists() && !file.isDirectory()) {
+                byte[] bytes = new byte[(int) file.length()];
+                try (FileInputStream fis = new FileInputStream(file)) {
+                    fis.read(bytes);
+                }
+                t.sendResponseHeaders(200, bytes.length);
                 OutputStream os = t.getResponseBody();
-                os.write(notFound.getBytes());
+                os.write(bytes);
                 os.close();
                 return;
             }
-            byte[] bytes = new byte[(int) file.length()];
-            try (FileInputStream fis = new FileInputStream(file)) {
-                fis.read(bytes);
+            // Try to load from resources
+            String resourcePath = uri.startsWith("/") ? uri.substring(1) : uri;
+            try (java.io.InputStream in = SimpleHttpServer.class.getClassLoader().getResourceAsStream(resourcePath)) {
+                if (in != null) {
+                    byte[] bytes = in.readAllBytes();
+                    t.sendResponseHeaders(200, bytes.length);
+                    OutputStream os = t.getResponseBody();
+                    os.write(bytes);
+                    os.close();
+                    return;
+                }
             }
-            t.sendResponseHeaders(200, bytes.length);
+            String notFound = "404 Not Found";
+            t.sendResponseHeaders(404, notFound.length());
             OutputStream os = t.getResponseBody();
-            os.write(bytes);
+            os.write(notFound.getBytes());
             os.close();
         }
     }
